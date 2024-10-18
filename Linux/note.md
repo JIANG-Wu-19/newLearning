@@ -1,5 +1,20 @@
 ﻿# Linux
 
+## Linux用户和权限
+
+### root
+
+拥有最大权限的账户名 超级管理员
+
+拥有最大的系统操作权限
+
+![1729063634670](image/note/1729063634670.png)
+
+### 用户、用户组
+
+![1729065298960](image/note/1729065298960.png)
+
+
 ## Linux命令
 
 ### 路径
@@ -22,7 +37,7 @@
 
 ### Linux命令基础
 
-```shell
+```powershell
 command [-options] [parameter]
 ```
 
@@ -30,7 +45,7 @@ command [-options] [parameter]
 
 ### ls命令
 
-```shell
+```powershell
 ls [-a -h -l] [path]
 ```
 
@@ -60,7 +75,7 @@ ls [-a -h -l] [path]
 
 切换工作目录
 
-```shell
+```powershell
 cd [path]
 ```
 
@@ -72,7 +87,7 @@ print work directory
 
 查看当前所在命令，无选项/参数
 
-```shell
+```powershell
 pwd
 ```
 
@@ -82,7 +97,7 @@ pwd
 
 make directory
 
-```shell
+```powershell
 mkdir [-p] [path]
 ```
 
@@ -94,7 +109,7 @@ mkdir [-p] [path]
 
 ### touch命令
 
-```shell
+```powershell
 touch [path]
 ```
 
@@ -106,7 +121,7 @@ touch无选项，参数必填
 
 cat命令查看文件内容
 
-```shell
+```powershell
 cat [path]
 ```
 
@@ -121,7 +136,7 @@ more也可以查看文件内容
 * cat直接显示文件内容
 * more支持翻页，内容过多可以逐页展示，空格翻页，q退出查看
 
-```shell
+```powershell
 more [path]
 ```
 
@@ -131,7 +146,7 @@ more [path]
 
 copy，用于复制文件（夹）
 
-```shell
+```powershell
 cp [-r] [p1] [p2]
 ```
 
@@ -145,7 +160,7 @@ cp [-r] [p1] [p2]
 
 move，用于移动文件（夹）
 
-```shell
+```powershell
 mv [p1] [p2]
 ```
 
@@ -158,7 +173,7 @@ mv [p1] [p2]
 
 remove，用于删除文件（夹）
 
-```shell
+```powershell
 rm [-r -f] [p1 p2 p3 ... pn]
 ```
 
@@ -172,7 +187,7 @@ rm [-r -f] [p1 p2 p3 ... pn]
 
 which查看使用命令的程序文件存放在哪里
 
-```shell
+```powershell
 which [order]
 ```
 
@@ -182,7 +197,7 @@ which [order]
 
 find搜索指定的文件
 
-```shell
+```powershell
 find [p1] -name "n1"
 ```
 
@@ -190,7 +205,7 @@ find [p1] -name "n1"
 
 #### 按照文件大小查找文件
 
-```shell
+```powershell
 find [p1] -size +|-n[KMG]
 ```
 
@@ -204,7 +219,7 @@ find [p1] -size +|-n[KMG]
 
 grep从文件中通过关键字过滤文件行
 
-```shell
+```powershell
 grep [-n] 关键字 [path]
 ```
 
@@ -218,7 +233,7 @@ grep [-n] 关键字 [path]
 
 wc统计文件的行数、单词数量
 
-```shell
+```powershell
 wc [-c -m -l -w] [path]
 ```
 
@@ -234,7 +249,7 @@ wc [-c -m -l -w] [path]
 
 echo在命令行内输出指定内容
 
-```shell
+```powershell
 echo [content]
 ```
 
@@ -242,7 +257,7 @@ echo [content]
 
 通过反引号将命令包围，被反引号包围的内容会被作为命令执行，而非普通字符
 
-```shell
+```powershell
 echo pwd
 echo `pwd`
 ```
@@ -260,7 +275,7 @@ echo `pwd`
 
 tail查看文件尾部内容，跟踪文件的最新修改
 
-```shell
+```powershell
 tail [-f -num] [path]
 ```
 
@@ -269,6 +284,57 @@ tail [-f -num] [path]
 * -num查看尾部多少行，默认10行
 
 ![1729008800632](image/note/1729008800632.png)
+
+### su命令
+
+switch user，用于账户切换的系统命令
+
+```powershell
+su [-] [name]
+```
+
+* -可选，表示是否在切换用户后加载环境变量
+* 参数表示要切换的用户名，省略表示切换到root
+* 切换用户后，通过exit退回上一个用户
+
+![1729064327923](image/note/1729064327923.png)
+
+* 使用普通用户切换到其他用户需要输入密码
+* 使用root用户切换到其他用户无需密码
+
+![1729064401557](image/note/1729064401557.png)
+
+### sudo命令
+
+sudo授权普通命令，临时以root身份执行
+
+```powershell
+sudo [order]
+```
+
+* 在其他命令之前，带上sudo
+* 需要为普通用户配置sudo认证
+
+#### 配置sudo认证
+
+![1729064772550](image/note/1729064772550.png)
+
+### 用户组命令
+
+* 创建用户组
+
+  ```powershell
+  groupadd [name]
+  ```
+* 删除用户组
+
+  ```powershell
+  groupdel [name]
+  ```
+
+
+
+
 
 
 ### |管道符
@@ -284,3 +350,46 @@ tail [-f -num] [path]
 ![1728981294797](image/note/1728981294797.png)
 
 ![1728983628640](image/note/1728983628640.png)
+
+## vi/vim编辑器
+
+visual interface是linux中最经典的文本编辑器
+
+vim是vi的加强版本，兼容vi所有指令
+
+不仅能编辑文本，还具有shell程序编辑的功能，颜色高亮确认语法
+
+三种工作模式
+
+* command mode，所有键入都是命令，命令驱动执行不同的功能
+* insert mode，编辑模式，对文件内容进行编辑
+* last line mode，以 `:`开始，用于文件保存、退出
+
+退出某个工作模式用esc
+
+![1729062545840](image/note/1729062545840.png)
+
+### 命令模式
+
+```powershell
+vim [path]
+```
+
+* 如果路径代表文件存在，则编辑已有文件
+* 如果路径代表文件不存在，则编辑新文件
+
+![1729062807313](image/note/1729062807313.png)
+
+![1729062887869](image/note/1729062887869.png)
+
+![1729062894801](image/note/1729062894801.png)
+
+#### 命令模式快捷键
+
+![1729062968332](image/note/1729062968332.png)
+
+![1729063115233](image/note/1729063115233.png)
+
+### 底线命令模式
+
+![1729063279575](image/note/1729063279575.png)
