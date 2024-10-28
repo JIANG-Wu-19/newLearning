@@ -9,3 +9,11 @@
 一本是[《Mathematics for Machine Learning》](books/Mathematics%20for%20Machine%20Learning.pdf)，用来进行学习
 
 另外一本是[《The Matrix Cookbook》](books/The%20Matrix%20Cookbook.pdf)，是一本工具书用来查询公式用的
+
+## 微积分
+
+## 线性代数
+
+### what is a tensor?
+
+## 概率论与数理统计
