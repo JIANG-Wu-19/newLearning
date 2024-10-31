@@ -373,3 +373,398 @@ x86架构中用CS段寄存器的低2位记录CPL Current Privilege Level
 ## Context Switch
 
 上下文切换
+
+这里主要讲的就是用户态-内核态切换的类型
+
+异常、中断、系统调用造成OS工作状态切换
+
+### 异常
+
+也叫内中断
+
+来自CPU执行指令内部的事情，如程序的非法操作码、地址越界、运算溢出、除0、虚拟存储缺页，异常不能被屏蔽，出现就需要处理
+
+### 中断
+
+称外中断
+
+来自CPU执行指令外部的事情，I/O、时钟中断等
+
+#### Interrupt Vector Table
+
+中断向量表是一个数据结构，存储了实模式中每种中断的处理程序地址。当中断发生时，CPU通过中断向量表找到相应的处理程序并执行。
+
+![1730344337868](image/note/1730344337868.png)
+
+进程发起中断请求，查询中断向量表，找到对应中断的引导入口
+
+#### Interrupt Descriptor Table
+
+中断描述符表IDT告诉CPU中断服务程序（Interrupt Service Routines）的位置，用于保护模式
+
+每个表项被称为门描述符
+
+![1730356182780](image/note/1730356182780.png)
+
+分成两段的原因是为了和中断向量表兼容，实现实模式和保护模式之间的兼容性
+
+中断流程
+
+![1730358113370](image/note/1730358113370.png)
+
+#### Interrupt Masking
+
+中断屏蔽
+
+禁止中断和使能中断是特权操作
+
+中断分为可屏蔽中断和不可屏蔽中断
+
+可屏蔽中断包括所有软件中断、系统调用以及一部分的硬件异常
+
+不可屏蔽中断包括一部分硬件异常
+
+**中断控制器用于进行上述操作**
+
+**中断栈**
+
+在内核态存储中用于保存中断进程状态的一个特殊栈
+
+没有中断时为空
+
+为了安全和可靠性不直接使用用户态的栈区
+
+### 系统调用
+
+trap，系统自陷命令，用于在用户态先调用OS内核态
+
+### 内核态-用户态模式转换
+
+发生的时间
+
+* 新的进程
+* 中断/异常/系统调用后继续已有进程
+* 时钟中断后转换进程
+* 用户层级的upcall
+
+#### upcall
+
+Upcall机制允许应用程序实现类似操作系统的功能
+
+发生的时间点
+
+* 异步I/O
+* 进程间通信
+* 用户层级异常处理
+* 用户层级资源分配
+
+### 几个关注的点
+
+中断/异常/系统调用硬件反应流程
+
+1. 屏蔽中断
+2. 将特殊寄存器的值存入其他临时寄存器
+3. 转换到内核态中断栈
+4. 将三个关键值压入中断栈
+5. （可选）保存错误码
+6. 调用中断解决器
+7. 保存中断进程的状态
+8. 执行解决器
+9. 继续中断进程
+
+## OS Interfaces and Syscalls
+
+### 操作系统编程接口
+
+操作系统给应用开放的函数：
+
+* 进程管理
+* I/O
+* 线程管理
+* 内存管理
+* 文件系统于存储
+* 网络
+* 图形化/窗口
+* 授权与安全
+
+系统调用函数
+
+![1730360366402](image/note/1730360366402.png)
+
+POSIX和libc
+
+可移植操作系统接口Portable Operating System
+Interface
+
+是UNIX操作系统的一种标准，它定义了操作系统的API、命令行接口和实用工具，使得软件尤其是系统调用能够在多个Unix类系统上移植和运行
+
+libc是一组提供C编程语言标准功能的库，包括输入/输出、字符串处理、内存管理等函数，用于支持C程序的开发和运行。
+
+由POSIX的API+标准C语言函数
+
+应用不直接调用系统调用，如果一款软件只由libc编写，则拥有良好的跨操作系统/硬件平台的可移植性
+
+### 以进程管理为例
+
+多进程需求
+
+在windows下的进程管理
+
+```c
+Boolean CreateProcess(char *prog,char &args)
+```
+
+* 用于在内核态创建、初始化PCB
+* 创建初始化一块新的内存地址空间
+* 将程序 `prog`加载到地址空间
+* 将参数 `args`拷贝进地址空间的内存
+* 初始化硬件文本开始执行
+* 告知新进程开始运行
+
+Unix类操作系统下的进程管理
+
+```c
+fork() exec()
+```
+
+`fork()`用于创建一个与父进程完全相同的子进程，除了返回值不同。在子进程中，`fork()` 返回 `0`；而在父进程中，`fork()` 返回子进程的 PID（进程标识符）。这使得父子进程可以根据返回值来区分执行路径。
+
+```c
+fork()
+```
+
+1. 创建初始化PCB
+2. 创建一个新地址空间
+3. 复制内存内容到子进程中
+4. 继承父进程的执行内容
+5. 告知新进程就绪
+
+```c
+exec(char *prog,char *args)
+```
+
+1. 将程序 `prog`加载到地址空间
+2. 将参数 `args`拷贝进地址空间的内存
+3. 初始化硬件文本开始执行
+
+### 以IO为例
+
+unix位IO设备只定义了一个接口，将每一个IO设备都视作一个文件，定义了 `open`,`read`,`write`,`close`操作
+
+```c
+#include <fcntl.h>
+int open(const char *pathname, int flags);
+int open(const char *pathname, int flags, mode_t mode);
+
+//return value: file descriptor or error code (-1)
+//pathname: could be a file (“/data/readme.txt”) or a device (“/dev/zero”)
+```
+
+```c
+#include <fcntl.h>
+int close(int fd);
+//return value: 0 (success) or -1 (error)
+//Note: if fd is the last file descriptor referring to the
+//underlying open file description, the resources associated with the open file description are freed.
+```
+
+```c
+#include <fcntl.h>
+ssize_t read(int fd, void *buf, size_t count);
+//It will read up to count bytes from file descriptor fd into the buffer starting at buf.
+//return value: the number of bytes read or error (-1)
+```
+
+```c
+#include <fcntl.h>
+ssize_t write(int fd, const void *buf, size_t count);
+//It will write up to count bytes from the buffer starting at buf to the file referred to by the file descriptor fd.
+//return value: the number of bytes written or -1 (error)
+```
+
+在使用前必须open
+
+字节导向意味着数据的传输和存储是以单个字节为基本单位进行的。即使在传输过程中采用了块（block）传输的方式，内存或存储设备上的寻址仍然是基于字节的
+
+内核缓冲读/写
+
+通过显式调用关闭操作（如 `close()` 函数），可以确保内核及时释放与文件描述符或其他资源相关的内核数据结构
+
+将接口扩展到进程间通信
+
+### 系统调用
+
+关键是方式出现用户态的错误
+
+解决方案就是使用系统调用存根System Calls Stub
+
+系统调用存根是一组在用户空间实现的函数，用于封装和简化对内核系统调用的访问
+
+![1730367616752](image/note/1730367616752.png)
+
+## Threads
+
+### 概念
+
+**并发 已经在前面进行讲解**
+
+线程是一个单一的执行序列，代表一个可以单独调度的任务
+
+* **轻量级** ：与进程相比，线程的创建和切换开销较小。
+* **共享资源** ：同一进程中的线程共享内存和其他资源，但拥有各自的栈和寄存器。
+* **并发执行** ：多个线程可以并发执行，提高程序的性能和响应能力。
+
+区别于线程
+
+![1730369699838](image/note/1730369699838.png)
+
+POSIX中提供了线程的API
+
+线程的生命周期
+
+![1730370126039](image/note/1730370126039.png)
+
+1. **新建（Init）**
+   * 创建线程对象，但线程尚未启动。
+   * 处于初始状态，尚未就绪执行。
+2. **就绪（Runnable）**
+   * 线程已创建并准备运行。
+   * 等待操作系统调度分配CPU时间片。
+3. **运行（Running）**
+   * 操作系统调度线程执行。
+   * 线程正在执行任务。
+4. **阻塞（Waiting）**
+   * 线程因等待某些条件或资源而暂停执行。
+   * 常见原因包括等待I/O操作完成、获取锁或其他同步机制。
+5. **终止（Finished）**
+   * 线程完成执行或被强制终止。
+   * 释放所有资源，生命周期结束。
+
+### TCB
+
+和进程类似，线程有线程控制块Thread Control Block（TCB）
+
+线程控制块是操作系统用于管理和跟踪每一个线程的关键数据结构
+
+* 线程ID
+* 优先级
+* 线程状态
+* 栈指针
+
+  指向线程的栈顶，用于管理函数调用和局部变量。
+* 处理器寄存器的复制
+
+共享的状态
+
+* 代码区
+* 全局变量
+* 堆变量
+
+### Implementation
+
+内核线程和用户级线程
+
+#### Create
+
+* 分配每一个线程的资源：TCB和栈
+* 初始化线程资源
+* 进入就绪队列
+
+#### Switch
+
+自主内核级线程上下文切换 `thread_yield()`
+
+被动内核级线程上下文切换：中断/异常
+
+主动线程上下文转换
+
+* 关闭中断
+* 取下一个就绪线程
+* 将当前线程标记为就绪
+* 将当前线程加入就绪队列
+* 保存所有寄存器和栈指针
+* 设置新线程的栈指针
+* 设置所有寄存器的值
+
+```c
+void thread_yield() {
+    TCB *chosenTCB;
+    disableInterrupts(); // why??
+    chosenTCB = readyList.getNextThread();
+    if (chosenTCB == NULL) {
+        // Nothing to do here
+    } else {
+        runningThread->state = READY;
+        readyList.add(runningThread);
+        thread_switch(runningThread, chosenTCB);
+        runningThread->state = RUNNING;
+    }
+    enableInterrupts();
+}
+void thread_switch(oldTCB, newTCB) {
+    pushad;
+    oldTCB->sp = %esp;
+    %esp = newTCB->sp;
+    popad;
+    return;
+}
+```
+
+被动内核级线程的上下文转换
+
+* 保存状态
+* 运行内核的解决器
+* 设置状态
+
+与用户态转换相似但是不同的是：
+
+* 不需要转换模式
+* 解决器可以加载任何就绪队列中的线程，而用户态只能转换被挂起的
+
+#### Delete
+
+* 将线程从就绪队列中移出，线程将不再运行
+* 释放分配给线程的资源
+
+避免线程自我删除的解决方案：
+
+* 线程将自己的TCB从就绪队列中移到结束线程队列
+* 让其他线程free那些结束的线程
+
+#### Multi-threaded Processes
+
+![1730388212095](image/note/1730388212095.png)实现多线程进程：
+
+* 通过内核级线程
+* 用户级库
+* 混合模式
+
+**通过内核级线程**
+
+创建一个用户级线程
+
+* 用户库分配一个用户级栈
+* 调用 `thread_create()`系统调用
+* 将创建的TCB指针存入对应进程的PCB
+
+创建一个内核级线程
+
+* 在内核分配线程资源
+* 初始化线程状态
+* 将创建的TCB放进就绪队列
+
+**通过用户级线程库**
+
+通过调用线程库中的派生例程创建新线程
+
+线程库决定运行的线程
+
+线程操作只是一个过程调用
+
+所有工作都在用户态完成，因此OS内核意识不到线程的存在
+
+**组合模式**
+
+基于内核级线程的优化
+
+内核支持创建多个内核级线程，一个内核级线程对应多个用户级线程，
