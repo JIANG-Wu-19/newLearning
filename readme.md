@@ -7,3 +7,4 @@ learn something new in the senior(gap) year
 * AITraining(Master Candidate learns basic knowledge about AI and relevant Maths)
 * Operating System
 * Speech Craft(some speech crafts in daily routine)
+* Diffuflow
